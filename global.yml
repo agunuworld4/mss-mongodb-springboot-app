@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  springapp:
+    image: agunu2025/mss-mongodb-app:1
+    restart: always
+    ports:
+      - 8080:8080
+    container_name: mongodb-app
+    networks:
+    - mss-network
+
+  mongo:
+    image: mongo
+    volumes:
+      - my-customer-volume:/data/db
+    restart: always
+    networks:
+    - mongodbbkp
+
+volumes:
+  mongodbbkp:
+    external: true
+
+networks:
+  my-customer-network:
+    mss-network: true

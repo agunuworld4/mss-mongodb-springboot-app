@@ -1,0 +1,145 @@
+# # preferredDuringSchedulingIgnoredDuringExecution(Soft Rule)
+# #This is preferred rules or soft rule, pod can be scduled even if the key are values does match
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mss-springboot-pod
+  namespace: ibm-ucd
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mss-springboot-svc
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 60
+  template:
+    metadata:
+      name: mss-springboot-svc
+      labels:
+        app: mss-springboot-svc
+    spec:
+      affinity:
+        nodeAffinity:
+         preferredDuringSchedulingIgnoredDuringExecution:
+         - weight: 1
+           preference:
+            matchExpressions:
+            - key: key    #"name"#
+              operator: In
+              values:
+              - mpm
+      containers:
+      - name: mss-springboot-con
+        image: image_version_update                  #image_version_update
+        ports:
+        - containerPort: 8080
+        env:
+          - name: MONGO_DB_HOSTNAME
+            value: mongo
+          - name: MONGO_DB_USERNAME
+            valueFrom:
+              configMapKeyRef:  #cm-demo.yml line 1-6
+                name: username-pwd
+                key: mongodb_username
+          - name: MONGO_DB_PASSWORD
+            valueFrom:
+              secretKeyRef: #cm-demo.yml line 12-18
+                name: mongodb-pwd
+                key: mongodb_password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mss-springboot-svc
+  namespace: ibm-ucd 
+spec:
+  type: ClusterIP #LoadBalancer #ClusterIP    #LoadBalancer,NodePort
+  selector:
+    app: mss-springboot-svc
+  ports:
+  - port: 80
+    targetPort: 8080
+    #nodePort: 33333
+# ---
+# apiVersion: apps/v1
+# kind: ReplicaSet
+# metadata:
+#   name: mongodbrs
+#   namespace: kibana
+# spec:
+#   selector:
+#     matchLabels:
+#       app: mongodb
+#   template:
+#      metadata:
+#        name: mongodbpod
+#        labels:
+#          app: mongodb
+#      spec:
+#        volumes:
+#        - name: mongodb-pvc
+#          persistentVolumeClaim:
+#            claimName: pvc-hostpath
+#        containers:
+#        - name: mongodbcontainer
+#          image: mongo
+#          ports:
+#          - containerPort: 27017
+#          env:
+#          - name: MONGO_INITDB_ROOT_USERNAME
+#            valueFrom:
+#              configMapKeyRef:
+#                name: username-pwd
+#                key: mongodb_username
+#          - name: MONGO_INITDB_ROOT_PASSWORD
+#            valueFrom:
+#              secretKeyRef:
+#                name: mongodb-pwd
+#                key: mongodb_password
+#          volumeMounts:
+#          - name: mongodb-pvc
+#            mountPath: /data/db
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: mongo
+#   namespace: kibana
+# spec:
+#   type: ClusterIP
+#   selector:
+#     app: mongodb
+#   ports:
+#   - port: 27017
+#     targetPort: 27017
+# ---
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: pv-hostpath
+# spec:
+#   storageClassName: manual
+#   capacity:
+#     storage: 2Gi
+#   accessModes:
+#   - ReadWriteOnce
+#   hostPath:
+#     path: "/tmp/mongodata"
+# ---
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: pvc-hostpath
+#   namespace: kibana
+# spec:
+#   storageClassName: manual
+#   accessModes:
+#   - ReadWriteOnce
+#   resources:
+#     requests:
+#       storage: 1Gi

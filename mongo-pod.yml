@@ -1,0 +1,60 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: ibm-ucd
+spec:
+  selector:
+    matchLabels:
+      app: mongo
+  serviceName: "mongo"
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo
+        ports:
+          - containerPort: 27017
+        env:
+          - name: MONGO_DB_HOSTNAME
+            value: mongo
+          - name: MONGO_DB_USERNAME
+            valueFrom:
+              configMapKeyRef:  #cm-demo.yml line 1-6
+                name: username-pwd
+                key: mongodb_username
+          - name: MONGO_DB_PASSWORD
+            valueFrom:
+              secretKeyRef: #cm-demo.yml line 12-18
+                name: mongodb-pwd
+                key: mongodb_password
+        volumeMounts:
+          - name: mongo-persistent-storage
+            mountPath: /data/db
+  volumeClaimTemplates:
+    - metadata:
+        name: mongo-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: standard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: ibm-ucd
+spec:
+  type: ClusterIP
+  selector:
+    app: mongo
+  ports:
+  - port: 27017
+    targetPort: 27017

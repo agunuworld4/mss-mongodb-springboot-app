@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  springboot:
+    environment:
+    - MONGO_DB_HOSTNAME=mongo
+    - MONGO_DB_USERNAME=plab02
+    - MONGO_DB_PASSWORD=plab0212345
+
+  mongo:
+    image: mongo
+    environment:
+    - MONGO_INITDB_ROOT_USERNAME=plab02
+    - MONGO_INITDB_ROOT_PASSWORD=plab0212345
+#     volumes:
+#       - my-volume:/data/db
+#     restart: always
+#     networks:
+#     - custom-network
+#
+# volumes:
+#   my-volume:
+#     external: true
+#
+# networks:
+#   custom-network:
+#     external: true
